@@ -19,7 +19,7 @@ def calculate_grade(grades, category_grade_weights, category_num_items):
         for y in range(0, int(category_num_items[x])):
             weight_achieved += ((float(grades[index]) * (float(category_grade_weights[x]) / 100.0)) / float(category_num_items[x]))
             index += 1
-        if category_grade_weights[x] != 0:
+        if len(category_grade_weights) != 0 and category_grade_weights[x] != 0:
             category_averages.append((float(weight_achieved)/float(category_grade_weights[x])) * 100.0)
         weights_achieved.append(weight_achieved)
 
@@ -56,8 +56,10 @@ def calculate_current_grade(grades, category_grade_weights, category_num_items):
 
     # Calculate Adjusted Grade Weights for each category
     adjusted_grade_weights = []
-    for x in range(0, len(category_num_items)):
-        adjusted_grade_weights.append((((float(current_category_num_items[x]) / float(category_num_items[x])) * float(category_grade_weights[x])) / percentage_graded))
+
+    if percentage_graded != 0:
+        for x in range(0, len(category_num_items)):
+            adjusted_grade_weights.append((((float(current_category_num_items[x]) / float(category_num_items[x])) * float(category_grade_weights[x])) / percentage_graded))
 
     # calculate current grade based on only graded assignments, passes altered copies of lists
     current_grade, current_letter_grade, current_category_averages = calculate_grade(current_grades, adjusted_grade_weights, current_category_num_items)
