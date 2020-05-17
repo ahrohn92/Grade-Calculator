@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
+import Class_File
 import Calculator
 
 #
@@ -8,22 +9,42 @@ import Calculator
 # File: Main.py
 # Desc: This module constructs the GUI, handles input validation, and passes valid inputs
 #       to the Calculator.py module to calculate either a final or current grade. The
-#       results are then returned to this module for formatting and displaying.
+#       results are then returned to this module for formatting and displaying. Finally,
+#       this module interacts with the Class_File.py module to save and open class configs.
 #
-
 
 # Initial GUI Window Parameters
 window = Tk()
 window.resizable(False, False)
 window.title("Grade Calculator")
+window.iconbitmap('img/A+.ico')
+main_frame = Frame(window)
+initial_frame = Frame(window)
+initial_window_width = 0
+initial_window_height = 0
 
 # Global Variables
+class_name = ""
 category_names = []
 category_grade_weights = []
 category_num_items = []
+table_columns = []
+grades = []
+file_is_loading = False
+
+# Creates Menu Bar
+menubar = Menu(window)
+filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="New", command=lambda: open_initial_window())
+filemenu.add_command(label="Open", command=lambda: load_class_file())
+filemenu.add_command(label="Save", state="disabled", command=lambda: Class_File.save_file(class_name, category_names, category_grade_weights, category_num_items, get_grades(False)))
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=window.quit)
+menubar.add_cascade(label="File", menu=filemenu)
+window.config(menu=menubar)
 
 
-# Center Window on Screen
+# Centers Window on Screen
 def center_window():
     window.update()
     screen_width = window.winfo_screenwidth()
@@ -33,49 +54,93 @@ def center_window():
     window.geometry("%dx%d+%d+%d" % (window.winfo_width(), window.winfo_height(), x_coordinate, y_coordinate))
 
 
-#
-# INITIAL WINDOW
-#
+# Opens Initial Window
+def open_initial_window():
 
-# Initial GUI Components
-initial_frame = Frame(window)
-main_frame = Frame(window)
-upper_frame = Frame(initial_frame)
-text_field = Entry(upper_frame, justify="center", font="Verdana 13")
-my_label = Label(upper_frame, text="Number of Grading Categories: ", font="Verdana 13").grid(row=0, column=0)
-text_field.grid(row=0, column=1)
-upper_frame.pack(padx=10, pady=10)
-submit = Button(initial_frame, text="Create Categories", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: check_num_categories()).pack(pady=10)   # check num categories
-initial_frame.pack()
-center_window()
+    # Removes Old Widgets if New Window
+    is_new_window = False
+    if len(main_frame.winfo_children()) != 0:
+        is_new_window = True
+        for widget in main_frame.winfo_children():
+            widget.destroy()
+    if len(initial_frame.winfo_children()) != 0:
+        is_new_window = True
+        for widget in initial_frame.winfo_children():
+            widget.destroy()
+
+    # Initial Window Widgets
+    upper_frame = Frame(initial_frame)
+    class_name_label = Label(upper_frame, text="Name of Class: ", font="Verdana 13").grid(row=0, column=0)
+    num_categories_label = Label(upper_frame, text="Number of Grading Categories: ", font="Verdana 13").grid(row=1, column=0)
+    class_name_entry = Entry(upper_frame, justify="center", font="Verdana 13")
+    num_categories_entry = Entry(upper_frame, justify="center", font="Verdana 13")
+    if file_is_loading:
+        class_name_entry.insert(0, class_name)
+        num_categories_entry.insert(0, str(len(category_names)))
+    class_name_entry.grid(row=0, column=1)
+    num_categories_entry.grid(row=1, column=1)
+    upper_frame.pack(padx=10, pady=10)
+    submit = Button(initial_frame, text="Create Categories", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: check_initial_entries(class_name_entry.get(), num_categories_entry.get())).pack(pady=10)
+    initial_frame.pack()
+    center_window()
+
+    # Resize and Center if New Window
+    global initial_window_width
+    global initial_window_height
+    if not is_new_window:
+        initial_window_width = window.winfo_width()
+        initial_window_height = window.winfo_height()
+    else:
+        window.geometry("%dx%d" % (initial_window_width, initial_window_height))
+        center_window()
+
+    # Disables Save Option in Menu Bar
+    filemenu.entryconfig(2, state=DISABLED)
 
 
-# Validates Input for Number of Categories
-def check_num_categories():
-    entry = text_field.get()
+open_initial_window()
+
+
+# Validates Input for Class Name & Number of Categories
+def check_initial_entries(class_name_entry, num_categories_entry):
+
+    class_name_is_valid = False
+    num_categories_is_valid = False
+
+    entry = class_name_entry.strip()
     if len(entry) == 0:
-        messagebox.showerror(title="ERROR", message="No number of categories is specified")
+        messagebox.showerror(title="ERROR", message="No class name is specified")
+        class_name_is_valid = False
+    else:
+        global class_name
+        class_name = entry
+        class_name_is_valid = True
+
+    entry = num_categories_entry.strip()
+    if len(entry) == 0:
+        messagebox.showerror(title="ERROR", message="No number of assignment categories is specified")
+        num_categories_is_valid = False
     else:
         try:
             num_categories = int(entry)
             if num_categories > 0:
                 if num_categories <= 9:
-                    open_category_window(num_categories)
+                    num_categories_is_valid = True
                 else:
-                    messagebox.showerror(title="ERROR", message="Number of categories cannot exceed 9")
-                    text_field.delete(0, END)
+                    messagebox.showerror(title="ERROR", message="Number of assignment categories cannot exceed 9")
+                    num_categories_is_valid = False
             else:
-                messagebox.showerror(title="ERROR", message="Number of categories must be larger than 0")
-                text_field.delete(0, END)
+                messagebox.showerror(title="ERROR", message="Number of assignment categories must be larger than 0")
+                num_categories_is_valid = False
         except ValueError:
             messagebox.showerror(title="ERROR", message="'" + entry + "' is not a valid integer")
-            text_field.delete(0, END)
+            num_categories_is_valid = False
+
+    if class_name_is_valid and num_categories_is_valid:
+        open_category_window(num_categories)
 
 
-#
-# MAIN WINDOW
-#
-
+# Opens Category Window
 def open_category_window(num_categories):
 
     window.geometry("")
@@ -126,11 +191,19 @@ def open_category_window(num_categories):
     for category_frame in category_frames:
         Label(category_frame, text="Category " + str(i + 1), width=50, bg="SteelBlue3", fg="white", font=category_font +" bold").grid(row=0, column=0, columnspan=2)
         Label(category_frame, text="Name of Category: ", bg="gainsboro", font=category_font).grid(row=1, column=0)
-        Entry(category_frame, justify="center", font=category_font).grid(row=1, column=1)
+        category_name_entry = Entry(category_frame, justify="center", font=category_font)
         Label(category_frame, text="Grade Weight (%): ", bg="gainsboro", font=category_font).grid(row=2, column=0)
-        Entry(category_frame, justify="center", font=category_font).grid(row=2, column=1)
+        category_grade_weight_entry = Entry(category_frame, justify="center", font=category_font)
         Label(category_frame, text="Number of Assignments: ", bg="gainsboro", font=category_font).grid(row=3, column=0)
-        Entry(category_frame, justify="center", font=category_font).grid(row=3, column=1)
+        category_num_items_entry = Entry(category_frame, justify="center", font=category_font)
+        if file_is_loading:
+            category_name_entry.insert(0, category_names[i])
+            category_grade_weight_entry.insert(0, category_grade_weights[i])
+            category_num_items_entry.insert(0, category_num_items[i])
+        category_name_entry.grid(row=1, column=1)
+        category_grade_weight_entry.grid(row=2, column=1)
+        category_num_items_entry.grid(row=3, column=1)
+
         i += 1
 
     # Add category rows to screen
@@ -145,6 +218,9 @@ def open_category_window(num_categories):
     Button(main_frame, text="Create Input Table", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: define_categories(category_frames)).pack(pady=10)
 
     center_window()
+
+    # Disables Save Option in Menu Bar
+    filemenu.entryconfig(2, state=DISABLED)
 
 
 # Sorts User Category Inputs into Various Lists
@@ -255,7 +331,7 @@ def define_categories(category_frames):
         open_grade_input_window()
 
 
-# Grade Input Window
+# Opens Grade Input Window
 def open_grade_input_window():
 
     window.geometry("")
@@ -282,7 +358,8 @@ def open_grade_input_window():
             num_rows = int(item_quantity)
 
     # insert initial assignment number frame
-    table_columns = [Frame(table_frame)]
+    table_columns.clear()
+    table_columns.append(Frame(table_frame))
 
     # add category frames
     for x in range(0, len(category_names)):
@@ -298,28 +375,35 @@ def open_grade_input_window():
         Label(table_columns[0], text=str(x + 1), height=1).grid(row=(x + 1), column=0, pady=(3, 0))
 
     # then creates widgets for each frame in list
+    grade_index = 0
     entry_font = ('Verdana', 13)
     for x in range(1, len(table_columns)):
         Label(table_columns[x], text=category_names[x - 1]+"\n("+'{:.2f}'.format(float(category_grade_weights[x-1])/float(category_num_items[x-1])).rstrip('0').rstrip('.')+"% ea)",
               height=2, width=20, font=entry_font, bg="SteelBlue3", fg="white").grid(row=0, column=0)
         for y in range(0, num_rows):
             if y < int(category_num_items[x - 1]):
-                Entry(table_columns[x], font=entry_font, justify="center").grid(row=(y + 1), column=0)
+                grade_entry = Entry(table_columns[x], font=entry_font, justify="center")
+                if file_is_loading:
+                    grade_entry.insert(0, grades[grade_index])
+                    grade_index += 1
+                grade_entry.grid(row=(y + 1), column=0)
             else:
                 Entry(table_columns[x], state="disabled", bg="gainsboro", font=entry_font).grid(row=(y + 1), column=0)
 
     table_frame.pack(padx=20, pady=10)
-    Button(grade_input_frame, text="Calculate Grade", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: validate_grades(table_columns)).pack(pady=10)
+    Button(grade_input_frame, text="Calculate Grade", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: get_grades(True)).pack(pady=10)
     grade_input_frame.pack()
 
     if len(category_num_items) > 7:
         center_window()
 
+    # Enables Save Option in Menu Bar
+    filemenu.entryconfig(2, state=ACTIVE)
 
-# Validate Grade Entries
-def validate_grades(table_columns):
 
-    grades = []
+# Gets Grades from Entries
+def get_grades(isCalculation):
+    grades.clear()
     grades_are_valid = True
     all_grades_are_present = True
 
@@ -344,6 +428,16 @@ def validate_grades(table_columns):
                         child.delete(0, END)
                         grades_are_valid = False
                         break
+
+    # Directs Grades for Either Calculation or Save File
+    if isCalculation:
+        validate_grades(grades, grades_are_valid, all_grades_are_present)
+    else:
+        return grades
+
+
+# Validate Grade Entries
+def validate_grades(grades, grades_are_valid, all_grades_are_present):
 
     # Calculate Grades & Output Results (IF VALID)
     if grades_are_valid:
@@ -377,6 +471,32 @@ def validate_grades(table_columns):
             message += " %\nPercent of points remaining: {:.2f}".format(percentage_not_graded*100).rstrip('0').rstrip('.')
             message += " %\n"
             messagebox.showinfo(title="Current Grade", message=message)
+
+
+# Takes Data from Class File and Assigns to Global Variables
+def load_class_file():
+
+    temp_class_name, temp_category_names, temp_category_grade_weights, temp_category_num_items, temp_grades = Class_File.open_file()
+
+    global class_name
+    global category_names
+    global category_grade_weights
+    global category_num_items
+    global grades
+    global file_is_loading
+
+    class_name = temp_class_name[0]
+    category_names = temp_category_names
+    category_grade_weights = temp_category_grade_weights
+    category_num_items = temp_category_num_items
+    grades = temp_grades
+    file_is_loading = True
+
+    open_initial_window()
+    open_category_window(len(category_names))
+    open_grade_input_window()
+
+    file_is_loading = False
 
 
 # main loop of the program

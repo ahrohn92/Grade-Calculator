@@ -79,6 +79,10 @@ def calculate_current_grade(grades, category_grade_weights, category_num_items):
             new_desired_grade_list.append(desired_grade)
             needed_grade_avgs.append(needed_grade_avg)
 
+    # If No Grades Are Entered, Letter Grade is 'N/A'
+    if not current_grades:
+        current_letter_grade = "N/A"
+
     return current_grade, current_letter_grade, new_desired_grade_list, unachievable_grade_list, percentage_graded, percentage_not_graded, needed_grade_avgs
 
 
