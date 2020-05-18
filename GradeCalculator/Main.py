@@ -236,11 +236,11 @@ def define_categories(category_frames):
         for child in frame.winfo_children():
             if child.winfo_class() == 'Entry':
                 if entry_count == 0:
-                    category_names.append(child.get())
+                    category_names.append(child.get().strip())
                 if entry_count == 1:
-                    category_grade_weights.append(child.get())
+                    category_grade_weights.append(child.get().strip())
                 if entry_count == 2:
-                    category_num_items.append(child.get())
+                    category_num_items.append(child.get().strip())
                 entry_count += 1
                 if entry_count > 2:
                     entry_count = 0
