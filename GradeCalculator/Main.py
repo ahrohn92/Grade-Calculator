@@ -31,6 +31,7 @@ category_num_items = []
 table_columns = []
 grades = []
 file_is_loading = False
+y_coordinate = 0
 
 # Creates Menu Bar
 menubar = Menu(window)
@@ -45,12 +46,16 @@ window.config(menu=menubar)
 
 
 # Centers Window on Screen
-def center_window():
+def center_window(is_initial_window):
+
+    global y_coordinate
+
     window.update()
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
     x_coordinate = (screen_width / 2) - (window.winfo_width() / 2)
-    y_coordinate = (screen_height / 3) - (window.winfo_height() / 2)
+    if is_initial_window:
+        y_coordinate = (screen_height / 3.5) - (window.winfo_height() / 2)
     window.geometry("%dx%d+%d+%d" % (window.winfo_width(), window.winfo_height(), x_coordinate, y_coordinate))
 
 
@@ -82,7 +87,7 @@ def open_initial_window():
     upper_frame.pack(padx=10, pady=10)
     submit = Button(initial_frame, text="Create Categories", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: check_initial_entries(class_name_entry.get(), num_categories_entry.get())).pack(pady=10)
     initial_frame.pack()
-    center_window()
+    center_window(True)
 
     # Resize and Center if New Window
     global initial_window_width
@@ -92,7 +97,7 @@ def open_initial_window():
         initial_window_height = window.winfo_height()
     else:
         window.geometry("%dx%d" % (initial_window_width, initial_window_height))
-        center_window()
+        center_window(True)
 
     # Disables Save Option in Menu Bar
     filemenu.entryconfig(2, state=DISABLED)
@@ -217,7 +222,7 @@ def open_category_window(num_categories):
     category_main_frame.pack()
     Button(main_frame, text="Create Input Table", bg="SteelBlue3", fg="white", font="Verdana 13", command=lambda: define_categories(category_frames)).pack(pady=10)
 
-    center_window()
+    center_window(False)
 
     # Disables Save Option in Menu Bar
     filemenu.entryconfig(2, state=DISABLED)
@@ -395,7 +400,7 @@ def open_grade_input_window():
     grade_input_frame.pack()
 
     if len(category_num_items) > 7:
-        center_window()
+        center_window(False)
 
     # Enables Save Option in Menu Bar
     filemenu.entryconfig(2, state=ACTIVE)
