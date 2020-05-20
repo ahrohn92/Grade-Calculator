@@ -260,8 +260,8 @@ def define_categories(category_frames):
             messagebox.showerror(title="ERROR", message="Category "+str(index+1)+" does not have a name")
             category_names_are_valid = False
             break
-        if len(category_name) > 20:
-            messagebox.showerror(title="ERROR", message="'"+category_name+"'\nexceeds the 20 character limit for names")
+        if len(category_name) > 30:
+            messagebox.showerror(title="ERROR", message="'"+category_name+"'\nexceeds the 30 character limit for names")
             category_names_are_valid = False
             break
 
